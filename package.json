@@ -1,12 +1,7 @@
 {
-  "name": "rynam",
-  "version": "1.0.0",
-  "description": "RynAmPrem - alight motion tool (CLI magic link)",
-  "main": "index.js",
-  "bin": {"rynam":"index.js"},
-  "engines": {"node": ">=18"},
-  "license": "MIT",
-  "repository": {"type":"git","url":"https://github.com/rynaqrtz/RynAmPrem"},
-  "scripts": {"start":"node index.js","test":"node test.js"},
-  "dependencies": {"axios":"^1.7.9"}
+  "name":"nabees-alight-motion-generator",
+  "version":"1.0.0",
+  "private":true,
+  "scripts":{"dev":"wrangler dev","deploy":"wrangler deploy"},
+  "devDependencies":{"wrangler":"^4.0.0"}
 }
