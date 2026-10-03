@@ -8,7 +8,3 @@ binding = "ASSETS"
 
 [observability]
 enabled = true
-
-[vars]
-IDENTITY_TOOLKIT_BASE = "https://www.googleapis.com/identitytoolkit/v3/relyingparty"
-SECURETOKEN_BASE = "https://securetoken.googleapis.com/v1/token"
