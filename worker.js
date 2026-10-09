@@ -7,7 +7,7 @@ const random = (n = 32) => { const b = crypto.getRandomValues(new Uint8Array(n))
 const sha = async (s) => new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(s)));
 const sessionCookie = (value, maxAge = 28800) => `nabees_session=${value}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 const clearSessionCookie = () => "nabees_session=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax";
-const clearOauthCookie = (name) => `${name}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`;
+const clearOauthCookie = (name) => `${name}=; Max-Age=0; Path=/auth/callback; HttpOnly; Secure; SameSite=Lax`;
 const cookieValue = (request, name) => {
   for (const part of (request.headers.get("cookie") || "").split(";")) {
     const i = part.indexOf("=");
@@ -80,6 +80,11 @@ function extractCode(raw = "") {
   const m = String(raw).match(/oobCode=([a-zA-Z0-9_-]+)/i);
   return m ? m[1] : String(raw).trim();
 }
+function callbackError(cookies = []) {
+  const headers = new Headers({ "content-type":"text/html; charset=utf-8", "cache-control":"no-store", "x-content-type-options":"nosniff" });
+  for (const c of cookies) headers.append("set-cookie", c);
+  return new Response("<!doctype html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Sign-in could not finish — Nabees</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f7ef;color:#182019;font:15px system-ui;padding:24px}.card{max-width:440px;background:white;border:1px solid #e6e9df;border-radius:24px;padding:32px;box-shadow:0 20px 70px #18201910}h1{font-size:25px;letter-spacing:-1px}p{color:#747d70;line-height:1.7}a{display:inline-block;margin-top:12px;background:#d9f36c;color:#182019;text-decoration:none;padding:13px 17px;border-radius:12px;font-weight:700}</style></head><body><main class=card><h1>We couldn't finish signing you in.</h1><p>Your authorization may have expired, or the project settings may need attention. Start a fresh secure sign-in to try again.</p><a href=/auth/login>Try again ↗</a></main></body></html>", { status:401, headers });
+}
 async function beginLogin(request, env) {
   if (!env.SESSION_SECRET) return json({ ok:false, error:"SESSION_SECRET is not configured." }, 503);
   const base = issuer(env), url = new URL(request.url), redirectUri = new URL("/auth/callback", url.origin).toString();
@@ -97,7 +102,7 @@ async function completeLogin(request, env) {
   const url = new URL(request.url), code = url.searchParams.get("code") || "", state = url.searchParams.get("state") || "";
   const savedState = cookieValue(request, "oidc_state"), nonce = cookieValue(request, "oidc_nonce"), verifier = cookieValue(request, "oidc_verifier");
   const clear = [clearOauthCookie("oidc_state"), clearOauthCookie("oidc_nonce"), clearOauthCookie("oidc_verifier")];
-  if (!code || !state || !savedState || state !== savedState || !nonce || !verifier) return responseRedirect("/?auth_error=state", clear);
+  if (!code || !state || !savedState || state !== savedState || !nonce || !verifier) return callbackError(clear);
   try {
     const base = issuer(env), redirectUri = new URL("/auth/callback", url.origin).toString();
     const form = new URLSearchParams({ grant_type:"authorization_code", client_id:clientId(env), code, redirect_uri:redirectUri, code_verifier:verifier });
@@ -113,7 +118,7 @@ async function completeLogin(request, env) {
     return responseRedirect("/", [...clear, sessionCookie(session)]);
   } catch (e) {
     console.error("Nabees SSO callback failed:", e?.message || "unknown");
-    return responseRedirect("/?auth_error=callback", clear);
+    return callbackError(clear);
   }
 }
 export default {
