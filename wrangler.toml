@@ -11,4 +11,4 @@ enabled = true
 
 [vars]
 IDENTITY_TOOLKIT_BASE = "https://www.googleapis.com/identitytoolkit/v3/relyingparty"
-SECURETOKEN_BASE = "https://securetoken.googleapis.com/v1/token"
+SECURETOKEN_BASE = "https://securetoken.googleapis.com/v1/token"\nAUTH_ISSUER = "https://auth.nabees.online"\nAUTH_CLIENT_ID = "alight-motion-generator"
